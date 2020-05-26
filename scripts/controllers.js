@@ -1,6 +1,74 @@
 
 // Controllers of the game
 
+class BusinessController
+{
+    _businessList = [];
+
+    _timerController = null;
+    _moneyController = null;
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    constructor(timerController, moneyController) {
+        for (let business of BusinessDefinitions) {
+            this._businessList.push(new RuntimeBusiness(business, 0));
+        }
+
+        this._timerController = timerController;
+        this._moneyController = moneyController;
+    }
+
+    //==============================================================================
+
+    buyBusiness(index) {
+        let business = this._businessList[index];
+        business.level++;
+        this._recalculateBusinessStats(business);
+
+        // TODO: update UI as well
+    }
+
+    _recalculateBusinessStats(business) {
+        let definition = business.definition;
+        if (business.level > 1) {
+            business.price = definition.price * business.level;
+            business.revenue = definition.revenue * business.level;
+        } else {
+            business.price = definition.price;
+            business.revenue = definition.revenue;
+        }
+    }
+
+    //==============================================================================
+
+    startProcessing(index) {
+        let business = this._businessList[index];
+        if (business.timerId == -1) {
+            business.timerId = this._timerController.startTimer(business.processingTime, 
+                    (timerId) => { this._timerCompletionHandler(timerId); });
+
+            // TODO: update UI
+        }
+    }
+
+    _timerCompletionHandler(timerId) {
+        for (let business of this._businessList) {
+            if (business.timerId == timerId) {
+                business.timerId = -1;
+
+                this._moneyController.grant(business.revenue);
+
+                // TODO: update UI
+
+                break;
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 class TimerController
 {
     _timerId = 0;
@@ -42,63 +110,37 @@ class TimerController
     }
 }
 
-//const timerController = new TimerController;
-
 /////////////////////////////////////////////////////////////////////////////////////
 
-// controller for runtime business
-// 1. buy/upgrade a business
-// 2. re-calculate a business' stats after leveling up
-// 3. start a timer for a business, and register callback for completion
-class BusinessController
+class MoneyController
 {
-    _businessList = [];
+    _amount = 0;
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    constructor() {
-        for (let business of BusinessDefinitions) {
-            this._businessList.push(new RuntimeBusiness(business, 0));
-        }
+    get amount() {
+        return this._amount;
     }
 
-    buyBusiness(business) {
-        business.level++;
-        updateBusinessStats(business);
-
-        // TODO: update UI as well
-
-        break;
+    canAfford(cost) {
+        return this._amount >= cost;
     }
 
-    updateBusinessStats(business) {
-        let definition = business.definition;
-        business.price = definition.price * (business.level * 2 + 1);
-        business.revenue = definition.revenue * (business.level + 1);
+    grant(amount) {
+        this._amount += amount;
+
+        // TODO: update UI
     }
 
-    startProcessing(business) {
-        if (business.timerId == -1) {
-            business.timerId = timerController.startTimer(business.processingTime, 
-                    (timerId) => { this.timerCompletionHandler(timerId); });
+    consume(amount) {
+        if (amount <= this._amount) {
+            this._amount -= amount;
 
             // TODO: update UI
+
+            return true;
         }
-    }
 
-    timerCompletionHandler(timerId) {
-        console.log(this);
-        for (let business of this._businessList) {
-            if (business.timerId == timerId) {
-                business.timerId = -1;
-
-                // TODO: grant revenue
-                console.log(business.revenue);
-
-                // TODO: update UI
-
-                break;
-            }
-        }
+        return false;
     }
 }

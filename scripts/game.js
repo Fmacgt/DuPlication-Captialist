@@ -1,3 +1,4 @@
 
 const timerController = new TimerController();
-const businessController = new BusinessController();
+const moneyController = new MoneyController();
+const businessController = new BusinessController(timerController, moneyController);
