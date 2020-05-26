@@ -11,9 +11,21 @@ class BusinessDefinition
     }
 }
 
+const BusinessDefinitions = [
+    new BusinessDefinition("Lemon Cart", 4, 1, 1),
+    new BusinessDefinition("Newspaper Stand", 400, 100, 2),
+    new BusinessDefinition("Carwash Store", 20000, 5000, 6),
+    new BusinessDefinition("Pizza Delivery", 120000, 30000, 15),
+    new BusinessDefinition("Donut Shop", 440000, 110000, 30),
+    new BusinessDefinition("Shrimp Boat", 20000000, 5000000, 60),
+];
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 class RuntimeBusiness
 {
     constructor(definition, level) {
+        this.definition = definition;
         this.level = level;
 
         this.name = definition.name;

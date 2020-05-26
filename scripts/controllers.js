@@ -36,7 +36,68 @@ class TimerController
                 // use splice() to remove an element
                 this._timerList.splice(ptr, 1);
 
-                timer.completionHandler();
+                timer.completionHandler(timer.id);
+            }
+        }
+    }
+}
+
+//const timerController = new TimerController;
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+// controller for runtime business
+// 1. buy/upgrade a business
+// 2. re-calculate a business' stats after leveling up
+// 3. start a timer for a business, and register callback for completion
+class BusinessController
+{
+    _businessList = [];
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    constructor() {
+        for (let business of BusinessDefinitions) {
+            this._businessList.push(new RuntimeBusiness(business, 0));
+        }
+    }
+
+    buyBusiness(business) {
+        business.level++;
+        updateBusinessStats(business);
+
+        // TODO: update UI as well
+
+        break;
+    }
+
+    updateBusinessStats(business) {
+        let definition = business.definition;
+        business.price = definition.price * (business.level * 2 + 1);
+        business.revenue = definition.revenue * (business.level + 1);
+    }
+
+    startProcessing(business) {
+        if (business.timerId == -1) {
+            business.timerId = timerController.startTimer(business.processingTime, 
+                    (timerId) => { this.timerCompletionHandler(timerId); });
+
+            // TODO: update UI
+        }
+    }
+
+    timerCompletionHandler(timerId) {
+        console.log(this);
+        for (let business of this._businessList) {
+            if (business.timerId == timerId) {
+                business.timerId = -1;
+
+                // TODO: grant revenue
+                console.log(business.revenue);
+
+                // TODO: update UI
+
+                break;
             }
         }
     }
