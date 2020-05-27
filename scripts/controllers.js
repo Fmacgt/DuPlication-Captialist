@@ -86,6 +86,8 @@ class BusinessController
                     saveData.processing = true;
                     saveData.timer = remainingTime;
 
+                    saveDataList.push(saveData);
+
                     continue;
                 }
             }
@@ -121,7 +123,7 @@ class BusinessController
                 if (saveData.processing) {
                     let currentTime = business.processingTime - saveData.timer;
                     business.timerId = this._timerController.startTimer(business.processingTime,
-                            this._timerCompletionHandler, currentTime);
+                        (timerId) => { this._timerCompletionHandler(timerId); }, currentTime);
                 }
             }
         }

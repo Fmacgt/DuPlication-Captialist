@@ -38,6 +38,9 @@ function initialize()
     } else {
         saveToLocal();
     }
+
+    window.addEventListener("load", () => { launch(); });
+    window.addEventListener("beforeunload", () => { closing(); });
 }
 
 document.addEventListener("DOMContentLoaded", initialize);
@@ -51,8 +54,8 @@ function launch()
 
 function closing()
 {
+    console.log("dsfds");
+    console.log(timerController);
     saveToLocal();
+    return true;
 }
-
-window.addEventListener("load", launch);
-window.addEventListener("unload", closing);
