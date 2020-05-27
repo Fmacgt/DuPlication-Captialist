@@ -17,4 +17,16 @@ function mainLoop(timestamp)
     requestAnimationFrame(mainLoop);
 }
 
-mainLoop(0);
+/////////////////////////////////////////////////////////////////////////////////////
+
+function initialize()
+{
+    console.log("initialize()");
+
+    let localStorage = window.localStorage;
+    localStorage.setItem('1', '111');
+
+    mainLoop(0);
+}
+
+document.addEventListener("DOMContentLoaded", initialize);
