@@ -61,6 +61,9 @@ class BusinessController
 
                 // TODO: update UI
 
+                business.timerId = this._timerController.startTimer(business.processingTime, 
+                        (timerId) => { this._timerCompletionHandler(timerId); });
+
                 break;
             }
         }
@@ -107,7 +110,7 @@ class BusinessController
                 let saveData = saveDataList[i];
 
                 business.level = saveData.level;
-                _recalculateBusinessStats(business);
+                this._recalculateBusinessStats(business);
 
 
                 if (business.timerId >= 0) {

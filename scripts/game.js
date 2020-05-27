@@ -12,21 +12,47 @@ function mainLoop(timestamp)
     let dt = prevTimestamp == 0 ? 0 : timestamp - prevTimestamp;
     prevTimestamp = timestamp;
 
-    timerController.updateTimers(dt / 0.001);
+    timerController.updateTimers(dt * 0.001);
 
     requestAnimationFrame(mainLoop);
+}
+
+function saveToLocal()
+{
+    let localStorage = window.localStorage;
+    localStorage.setItem("DuPlicationCapitalistSaveVersion", "1");
+
+    moneyController.writeLocal(localStorage);
+    businessController.writeLocal(localStorage);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 
 function initialize()
 {
-    console.log("initialize()");
-
     let localStorage = window.localStorage;
-    localStorage.setItem('1', '111');
-
-    mainLoop(0);
+    let hasSave = localStorage.getItem("DuPlicationCapitalistSaveVersion") === "1";
+    if (hasSave) {
+        moneyController.readLocal(localStorage);
+        businessController.readLocal(localStorage);
+    } else {
+        saveToLocal();
+    }
 }
 
 document.addEventListener("DOMContentLoaded", initialize);
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+function launch()
+{
+    mainLoop(0);
+}
+
+function closing()
+{
+    saveToLocal();
+}
+
+window.addEventListener("load", launch);
+window.addEventListener("unload", closing);
