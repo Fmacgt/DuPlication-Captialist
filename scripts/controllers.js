@@ -44,7 +44,7 @@ class BusinessController
 
     startProcessing(index) {
         let business = this._businessList[index];
-        if (business.timerId == -1) {
+        if (business.timerId === -1) {
             business.timerId = this._timerController.startTimer(business.processingTime, 
                     (timerId) => { this._timerCompletionHandler(timerId); });
 
@@ -54,14 +54,77 @@ class BusinessController
 
     _timerCompletionHandler(timerId) {
         for (let business of this._businessList) {
-            if (business.timerId == timerId) {
+            if (business.timerId === timerId) {
                 business.timerId = -1;
 
                 this._moneyController.grant(business.revenue);
 
                 // TODO: update UI
 
+                business.timerId = this._timerController.startTimer(business.processingTime, 
+                        (timerId) => { this._timerCompletionHandler(timerId); });
+
                 break;
+            }
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    writeLocal(localStorage) {
+        // data to store:
+        // 1. level,
+        // 2. timer time - (running, time) pair
+        let saveDataList = [];
+        for (let business of this._businessList) {
+            let saveData = {};
+            saveData.level = business.level;
+            if (business.timerId != -1) {
+                let remainingTime = this._timerController.getRemainingTime(business.timerId);
+                // in case the business somehow gets an invalid timer id...
+                if (remainingTime >= 0) {
+                    saveData.processing = true;
+                    saveData.timer = remainingTime;
+
+                    saveDataList.push(saveData);
+
+                    continue;
+                }
+            }
+
+            // handle the rest of the cases
+            saveData.processing = false;
+            saveData.timer = 0;
+
+            saveDataList.push(saveData);
+        }
+
+        localStorage.setItem("businessData", JSON.stringify(saveDataList));
+    }
+
+    readLocal(localStorage) {
+        let saveDataList = JSON.parse(localStorage.getItem("businessData"));
+        if (saveDataList) {
+            let indexCap = Math.min(this._businessList.length, saveDataList.length);
+            // NOTE: maybe verify all elements in saveDataList are of the correct type?
+            for (let i = 0; i < indexCap; i++) {
+                let business = this._businessList[i];
+                let saveData = saveDataList[i];
+
+                business.level = saveData.level;
+                this._recalculateBusinessStats(business);
+
+
+                if (business.timerId >= 0) {
+                    this._timerController.abortTimer(business.timerId);
+                    business.timerId = -1;
+                }
+
+                if (saveData.processing) {
+                    let currentTime = business.processingTime - saveData.timer;
+                    business.timerId = this._timerController.startTimer(business.processingTime,
+                        (timerId) => { this._timerCompletionHandler(timerId); }, currentTime);
+                }
             }
         }
     }
@@ -77,11 +140,16 @@ class TimerController
     /////////////////////////////////////////////////////////////////////////////////////
 
     // start a new timer
-    startTimer(duration, completionHandler) {
+    startTimer(duration, completionHandler, startTime) {
         let id = this._timerId;
         this._timerId++;
 
-        this._timerList.push(new Timer(id, duration, completionHandler));
+        let newTimer = new Timer(id, duration, completionHandler);
+        if (startTime) {
+            newTimer.time = startTime;
+        }
+
+        this._timerList.push(newTimer);
 
         return id;
     }
@@ -105,6 +173,27 @@ class TimerController
                 this._timerList.splice(ptr, 1);
 
                 timer.completionHandler(timer.id);
+            }
+        }
+    }
+
+    getRemainingTime(timerId) {
+        for (let timer of this._timerList) {
+            if (timer.id === timerId) {
+                return timer.duration - timer.time;
+            }
+        }
+
+        return -1;
+    }
+
+    abortTimer(timerId) {
+        let ptr = 0;
+        while (ptr < this._timerList.length) {
+            let timer = this._timerList[ptr];
+            if (timer.id === timerId) {
+                this._timerList.splice(ptr, 1);
+                break;
             }
         }
     }
@@ -142,5 +231,15 @@ class MoneyController
         }
 
         return false;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    writeLocal(localStorage) {
+        localStorage.setItem("moneyAmount", this._amount.toString());
+    }
+
+    readLocal(localStorage) {
+        this._amount = parseInt(localStorage.getItem("moneyAmount"));
     }
 }
