@@ -10,8 +10,8 @@ class BusinessController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    constructor(timerController, moneyController) {
-        for (let business of BusinessDefinitions) {
+    constructor(timerController, moneyController, definitionList) {
+        for (let business of definitionList) {
             this._businessList.push(new RuntimeBusiness(business, 0));
         }
 
@@ -125,6 +125,85 @@ class BusinessController
                     business.timerId = this._timerController.startTimer(business.processingTime,
                         (timerId) => { this._timerCompletionHandler(timerId); }, currentTime);
                 }
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+// TODO: change to 'upgrade controller' later?
+class ManagerController
+{
+    _managerList = [];
+    _unlockedFlags = [];
+
+    _moneyController = null;
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    constructor(moneyController, definitionList) {
+        this._managerList = definitionList;
+        for (let i = 0; i < this._managerList.length; i++) {
+            this._unlockedFlags.push(false);
+        }
+
+        this._moneyController = moneyController;
+    }
+
+    buyManager(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            // TODO: check cost?
+
+            this._unlockedFlags[managerIdx] = true;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    isUnlocked(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            return this._unlockedFlags[managerIdx];
+        }
+
+        return false;
+    }
+
+    canAfford(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            return this._moneyController.canAffort(this._managerList[managerIdx].price);
+        }
+
+        return false;
+    }
+
+    _findManagerIndex(targetBusinessDef) {
+        for (let i = 0; i < this._managerList.length; i++) {
+            if (this._managerList[i].targetBusinessDef === targetBusinessDef) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    writeLocal(localStorage) {
+        localStorage.setItem("managerData", JSON.stringify(this._unlockedFlags));
+    }
+
+    readLocal(localStorage) {
+        let loadedFlags = JSON.parse(localStorage.getItem("managerData"));
+        if (loadedFlags) {
+            let indexCap = Math.min(this._unlockedFlags.length, loadedFlags.length);
+            for (let i = 0; i < indexCap; i++) {
+                this._unlockedFlags[i] = loadedFlags[i];
             }
         }
     }

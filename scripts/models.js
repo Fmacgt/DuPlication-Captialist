@@ -39,6 +39,26 @@ class RuntimeBusiness
 
 /////////////////////////////////////////////////////////////////////////////////////
 
+class ManagerDefinition
+{
+    constructor(name, price, targetBusinessDef) {
+        this.name = name;
+        this.price = price;
+        this.targetBusinessDef = targetBusinessDef;
+    }
+}
+
+const ManagerDefinitions = [
+    new ManagerDefinition("Manager 01", 100, BusinessDefinitions[0]),
+    new ManagerDefinition("Manager 02", 10000, BusinessDefinitions[1]),
+    new ManagerDefinition("Manager 03", 500000, BusinessDefinitions[2]),
+    new ManagerDefinition("Manager 04", 3000000, BusinessDefinitions[3]),
+    new ManagerDefinition("Manager 05", 11000000, BusinessDefinitions[4]),
+    new ManagerDefinition("Manager 06", 500000000, BusinessDefinitions[5]),
+];
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 class Timer
 {
     constructor(id, duration, completionHandler) {

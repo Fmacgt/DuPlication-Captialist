@@ -1,7 +1,9 @@
 
 const timerController = new TimerController();
 const moneyController = new MoneyController();
-const businessController = new BusinessController(timerController, moneyController);
+const managerController = new ManagerController(moneyController, ManagerDefinitions);
+const businessController = new BusinessController(
+        timerController, moneyController, BusinessDefinitions);
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -23,6 +25,7 @@ function saveToLocal()
     localStorage.setItem("DuPlicationCapitalistSaveVersion", "1");
 
     moneyController.writeLocal(localStorage);
+    managerController.writeLocal(localStorage);
     businessController.writeLocal(localStorage);
 }
 
@@ -34,6 +37,7 @@ function initialize()
     let hasSave = localStorage.getItem("DuPlicationCapitalistSaveVersion") === "1";
     if (hasSave) {
         moneyController.readLocal(localStorage);
+        managerController.readLocal(localStorage);
         businessController.readLocal(localStorage);
     } else {
         saveToLocal();
