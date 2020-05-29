@@ -202,18 +202,29 @@ class BusinessUIItem
 
         // draw texts & images
 
-        // Revenue
-        ctx.font = "16px Arial";
-        ctx.fillStyle = TextColorBlack;
-        ctx.textAlign = "center";
-        ctx.fillText(TextFormatter.formatWholeMoneyString(this.business.revenue), 
-                this.revenueRect.x + RevenueRectWidth / 2, this.revenueRect.y + 24);
-
         // Processing time
         let remainingTime = timerController.getRemainingTime(this.business.timerId);
         let timerString = remainingTime != -1 ? TextFormatter.formatTimeString(remainingTime) : "00:00:00";
+
+        ctx.font = "16px Arial";
+        ctx.fillStyle = TextColorBlack;
+        ctx.textAlign = "center";
         ctx.fillText(timerString, 
                 this.timerRect.x + TimerRectWidth / 2, this.timerRect.y + 24);
+
+        if (remainingTime != -1) {
+            let percent = 1 - remainingTime / this.business.processingTime;
+            percent = Math.max(0, Math.min(percent, 1));
+
+            new Rect(this.revenueRect.x, this.revenueRect.y, 
+                    RevenueRectWidth * percent, RevenueRectHeight,
+                    BorderColor, ProgressBarColor).render(ctx);
+        }
+
+        // Revenue
+        ctx.fillStyle = TextColorBlack;
+        ctx.fillText(TextFormatter.formatWholeMoneyString(this.business.revenue), 
+                this.revenueRect.x + RevenueRectWidth / 2, this.revenueRect.y + 24);
 
         // Business Levels
         ctx.fillText(this.business.level.toString(),
