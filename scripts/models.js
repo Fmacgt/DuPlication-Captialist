@@ -99,48 +99,78 @@ class Rect {
 
 const BusinessUIItemWidth = 300;
 const BusinessUIItemHeight = 80;
-const UpgradeOffsetX = 80;
-const UpgradeOffsetY = 40;
-const UpgradeBoxWidth = 100;
-const UpgradeBoxHeight = 40;
+
+const RevenueRectOffsetX = 80;
+const RevenueRectWidth = 200;
+const RevenueRectHeight = 40;
+
+const UpgradeRectOffsetX = 80;
+const UpgradeRectOffsetY = 40;
+const UpgradeRectWidth = 140;
+const UpgradeRectHeight = 40;
+
+const TimerRectOffsetX = 220;
+const TimerRectOffsetY = 40;
+const TimerRectWidth = 80;
+const TimerRectHeight= 40;
 
 class BusinessUIItem
 {
-    constructor(x, y, business) {
+    constructor(x, y, business, startProcess, tryUpgrade) {
         this.business = business;
+        this.startProcess = startProcess;
+        this.tryUpgrade = tryUpgrade;
 
         this.x = x;
         this.y = y;
 
         this.frame = new Rect(x, y, BusinessUIItemWidth, BusinessUIItemHeight);
-        this.timerBox = new Rect(x + BusinessUIItemWidth - 80, y + BusinessUIItemHeight / 2,
-                80, BusinessUIItemHeight / 2, "#00dd95");
-        this.upgradeBox = new Rect(x + UpgradeOffsetX, y + UpgradeOffsetY, UpgradeBoxWidth, UpgradeBoxHeight, "#dd9500");
+        this.revenueRect = new Rect(x + RevenueRectOffsetX, y, 
+                RevenueRectWidth, RevenueRectHeight);
+        this.upgradeRect = new Rect(x + UpgradeRectOffsetX, y + UpgradeRectOffsetY, 
+                UpgradeRectWidth, UpgradeRectHeight, "#dd9500");
+        this.timerRect = new Rect(x + TimerRectOffsetX, y + TimerRectOffsetY,
+                TimerRectWidth, TimerRectHeight, "#00dd95");
     }
 
     render(ctx, timerController) {
         // draw frames
         this.frame.render(ctx);
-        this.timerBox.render(ctx);
-        this.upgradeBox.render(ctx);
+        this.revenueRect.render(ctx);
+        this.upgradeRect.render(ctx);
+        this.timerRect.render(ctx);
 
         // draw texts & images
+
+        // Revenue
         ctx.font = "16px Arial";
         ctx.fillStyle = "#ffffff";
-        ctx.fillText(this.business.revenue.toString(), this.x + UpgradeOffsetX, this.y + 20);
+        ctx.textAlign = "center";
+        ctx.fillText(this.business.revenue.toString(), 
+                this.revenueRect.x + RevenueRectWidth / 2, this.revenueRect.y + 24);
 
+        // Processing time
         let remainingTime = timerController.getRemainingTime(this.business.timerId);
         let timerString = remainingTime != -1 ? remainingTime.toString() : "00:00:00";
-        ctx.fillText("00:00:00", this.timerBox.x + 8, this.timerBox.y + 20);
+        ctx.fillText(timerString, 
+                this.timerRect.x + TimerRectWidth / 2, this.timerRect.y + 24);
+
+        // Upgrade button & Cost
+        ctx.fillText(this.business.price.toString(),
+                this.upgradeRect.x + UpgradeRectWidth / 2, this.upgradeRect.y + 24);
     }
 
     checkClicking(x, y) {
         let inside = this.frame.containsPoint(x, y);
         if (inside) {
-            if (this.upgradeBox.containsPoint(x, y)) {
-                // TODO: try to upgrade/buy the business
+            if (this.upgradeRect.containsPoint(x, y)) {
+                if (this.tryUpgrade) {
+                    this.tryUpgrade();
+                }
             } else {
-                // TODO: start processing
+                if (this.startProcess) {
+                    this.startProcess();
+                }
             }
         }
     }

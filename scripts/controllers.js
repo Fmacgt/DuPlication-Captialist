@@ -77,11 +77,28 @@ class BusinessController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
+    populateUIItemList(startX, startY) {
+        let itemList = [];
+        let y = startY;
+        for (let itemIdx = 0; itemIdx < this._businessList.length; itemIdx++) {
+            let businessIndex = itemIdx;
+            itemList.push(new BusinessUIItem(startX, y, this._businessList[itemIdx],
+                        () => { this.startProcessing(businessIndex); },
+                        () => { this.buyBusiness(businessIndex); }));
+
+            y += BusinessUIItemHeight + 10;
+        }
+
+        return itemList;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
     writeLocal(localStorage) {
         // data to store:
         // 1. level,
         // 2. timer time - (running, time) pair
-        // 3. hasManager
+        // 3. hasManager flags
         let saveDataList = [];
         for (let business of this._businessList) {
             let saveData = {};

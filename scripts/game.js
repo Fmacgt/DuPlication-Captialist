@@ -10,6 +10,8 @@ const managerController = new ManagerController(moneyController, ManagerDefiniti
 const businessController = new BusinessController(
         timerController, moneyController, BusinessDefinitions);
 
+const BusinessUIItemList = businessController.populateUIItemList(60, 60);
+
 /////////////////////////////////////////////////////////////////////////////////////
 
 let prevTimestamp = 0;
@@ -26,21 +28,12 @@ function mainLoop(timestamp)
     requestAnimationFrame(mainLoop);
 }
 
-const TestItemList = [
-    new BusinessUIItem(80, 80, businessController._businessList[0]),
-    new BusinessUIItem(80, 180, businessController._businessList[1]),
-    new BusinessUIItem(80, 280, businessController._businessList[2]),
-    new BusinessUIItem(80, 380, businessController._businessList[3]),
-    new BusinessUIItem(80, 480, businessController._businessList[4]),
-    new BusinessUIItem(80, 580, businessController._businessList[5])
-];
-
 function render()
 {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // TODO: draw the game UI
-    for (let item of TestItemList) {
+    for (let item of BusinessUIItemList) {
         item.render(ctx, timerController);
     }
 }
@@ -50,7 +43,7 @@ function handleMouseDown(e)
     let x = e.clientX - canvas.offsetLeft;
     let y = e.clientY - canvas.offsetTop;
 
-    for (let item of TestItemList) {
+    for (let item of BusinessUIItemList) {
         item.checkClicking(x, y);
     }
 }
