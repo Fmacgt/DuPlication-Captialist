@@ -69,3 +69,79 @@ class Timer
         this.completionHandler = completionHandler;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+class Rect {
+    constructor(x, y, width, height, fillColor = "#0095DD") {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.fillColor = fillColor;
+    }
+
+    render(ctx) {
+        ctx.beginPath();
+        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.fillStyle = this.fillColor;
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    containsPoint(x, y) {
+        return x >= this.x && x <= this.x + this.width &&
+            y >= this.y && y <= this.y + this.height;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+const BusinessUIItemWidth = 300;
+const BusinessUIItemHeight = 80;
+const UpgradeOffsetX = 80;
+const UpgradeOffsetY = 40;
+const UpgradeBoxWidth = 100;
+const UpgradeBoxHeight = 40;
+
+class BusinessUIItem
+{
+    constructor(x, y, business) {
+        this.business = business;
+
+        this.x = x;
+        this.y = y;
+
+        this.frame = new Rect(x, y, BusinessUIItemWidth, BusinessUIItemHeight);
+        this.timerBox = new Rect(x + BusinessUIItemWidth - 80, y + BusinessUIItemHeight / 2,
+                80, BusinessUIItemHeight / 2, "#00dd95");
+        this.upgradeBox = new Rect(x + UpgradeOffsetX, y + UpgradeOffsetY, UpgradeBoxWidth, UpgradeBoxHeight, "#dd9500");
+    }
+
+    render(ctx, timerController) {
+        // draw frames
+        this.frame.render(ctx);
+        this.timerBox.render(ctx);
+        this.upgradeBox.render(ctx);
+
+        // draw texts & images
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(this.business.revenue.toString(), this.x + UpgradeOffsetX, this.y + 20);
+
+        let remainingTime = timerController.getRemainingTime(this.business.timerId);
+        let timerString = remainingTime != -1 ? remainingTime.toString() : "00:00:00";
+        ctx.fillText("00:00:00", this.timerBox.x + 8, this.timerBox.y + 20);
+    }
+
+    checkClicking(x, y) {
+        let inside = this.frame.containsPoint(x, y);
+        if (inside) {
+            if (this.upgradeBox.containsPoint(x, y)) {
+                // TODO: try to upgrade/buy the business
+            } else {
+                // TODO: start processing
+            }
+        }
+    }
+}

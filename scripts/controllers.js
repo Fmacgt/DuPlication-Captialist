@@ -368,3 +368,16 @@ class MoneyController
         this._amount = 0;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+class BusinessUIRenderer
+{
+    constructor(businessController, businessList, timerController) {
+    }
+
+    // TODO: for each RuntimeBusiness in the list, render its UI representation on the canvas
+    render(ctx)
+    {
+    }
+}
