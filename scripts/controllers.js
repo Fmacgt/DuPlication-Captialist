@@ -77,11 +77,28 @@ class BusinessController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
+    populateUIItemList(startX, startY) {
+        let itemList = [];
+        let y = startY;
+        for (let itemIdx = 0; itemIdx < this._businessList.length; itemIdx++) {
+            let businessIndex = itemIdx;
+            itemList.push(new BusinessUIItem(startX, y, this._businessList[itemIdx],
+                        () => { this.startProcessing(businessIndex); },
+                        () => { this.buyBusiness(businessIndex); }));
+
+            y += BusinessUIItemHeight + 10;
+        }
+
+        return itemList;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
     writeLocal(localStorage) {
         // data to store:
         // 1. level,
         // 2. timer time - (running, time) pair
-        // 3. hasManager
+        // 3. hasManager flags
         let saveDataList = [];
         for (let business of this._businessList) {
             let saveData = {};
@@ -353,6 +370,17 @@ class MoneyController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
+    render(ctx, x, y) {
+        ctx.font = "24px Arial";
+        ctx.fillStyle = TextColorWhite;
+        ctx.textAlign = "start";
+
+        let moneyString = "$" + TextFormatter.formatWholeMoneyString(this._amount);
+        ctx.fillText(moneyString, x, y + 36);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
     writeLocal(localStorage) {
         localStorage.setItem("moneyAmount", this._amount.toString());
     }
@@ -366,5 +394,18 @@ class MoneyController
     resetAll()
     {
         this._amount = 0;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+class BusinessUIRenderer
+{
+    constructor(businessController, businessList, timerController) {
+    }
+
+    // TODO: for each RuntimeBusiness in the list, render its UI representation on the canvas
+    render(ctx)
+    {
     }
 }
