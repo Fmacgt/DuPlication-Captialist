@@ -29,7 +29,7 @@ class BusinessController
 
     buyBusiness(index) {
         let business = this._businessList[index];
-        if (this._moneyController.canAffort(business.price)) {
+        if (this._moneyController.canAfford(business.price)) {
             this._moneyController.consume(business.price);
 
             business.level++;
@@ -256,7 +256,7 @@ class ManagerController
     canAfford(targetBusinessDef) {
         let managerIdx = this._findManagerIndex(targetBusinessDef);
         if (managerIdx >= 0 && managerIdx < this._managerList.length) {
-            return this._moneyController.canAffort(this._managerList[managerIdx].price);
+            return this._moneyController.canAfford(this._managerList[managerIdx].price);
         }
 
         return false;
