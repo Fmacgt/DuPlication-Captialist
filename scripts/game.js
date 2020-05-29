@@ -33,6 +33,8 @@ function render()
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // TODO: draw the game UI
+    moneyController.render(ctx, 60, 10);
+
     for (let item of BusinessUIItemList) {
         item.render(ctx, timerController);
     }

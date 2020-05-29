@@ -370,6 +370,17 @@ class MoneyController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
+    render(ctx, x, y) {
+        ctx.font = "24px Arial";
+        ctx.fillStyle = TextColorWhite;
+        ctx.textAlign = "start";
+
+        let moneyString = "$" + TextFormatter.formatWholeMoneyString(this._amount);
+        ctx.fillText(moneyString, x, y + 36);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
     writeLocal(localStorage) {
         localStorage.setItem("moneyAmount", this._amount.toString());
     }
