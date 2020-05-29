@@ -10,8 +10,8 @@ class BusinessController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    constructor(timerController, moneyController) {
-        for (let business of BusinessDefinitions) {
+    constructor(timerController, moneyController, definitionList) {
+        for (let business of definitionList) {
             this._businessList.push(new RuntimeBusiness(business, 0));
         }
 
@@ -46,23 +46,29 @@ class BusinessController
         let business = this._businessList[index];
         if (business.timerId === -1) {
             business.timerId = this._timerController.startTimer(business.processingTime, 
-                    (timerId) => { this._timerCompletionHandler(timerId); });
+                    (timerId, multiplier, remainingTime) => { 
+                        this._timerCompletionHandler(timerId, multiplier, remainingTime); 
+                    });
 
             // TODO: update UI
         }
     }
 
-    _timerCompletionHandler(timerId) {
+    _timerCompletionHandler(timerId, multiplier, remainingTime) {
         for (let business of this._businessList) {
             if (business.timerId === timerId) {
                 business.timerId = -1;
 
-                this._moneyController.grant(business.revenue);
+                this._moneyController.grant(business.revenue * multiplier);
 
                 // TODO: update UI
 
-                business.timerId = this._timerController.startTimer(business.processingTime, 
-                        (timerId) => { this._timerCompletionHandler(timerId); });
+                if (business.hasManager) {
+                    business.timerId = this._timerController.startTimer(business.processingTime, 
+                            (timerId, multiplier, remainingTime) => { 
+                                this._timerCompletionHandler(timerId, multiplier, remainingTime); 
+                            }, remainingTime);
+                }
 
                 break;
             }
@@ -75,10 +81,12 @@ class BusinessController
         // data to store:
         // 1. level,
         // 2. timer time - (running, time) pair
+        // 3. hasManager
         let saveDataList = [];
         for (let business of this._businessList) {
             let saveData = {};
             saveData.level = business.level;
+            saveData.hasManager = business.hasManager;
             if (business.timerId != -1) {
                 let remainingTime = this._timerController.getRemainingTime(business.timerId);
                 // in case the business somehow gets an invalid timer id...
@@ -112,6 +120,7 @@ class BusinessController
                 let saveData = saveDataList[i];
 
                 business.level = saveData.level;
+                business.hasManager = saveData.hasManager;
                 this._recalculateBusinessStats(business);
 
 
@@ -123,9 +132,108 @@ class BusinessController
                 if (saveData.processing) {
                     let currentTime = business.processingTime - saveData.timer;
                     business.timerId = this._timerController.startTimer(business.processingTime,
-                        (timerId) => { this._timerCompletionHandler(timerId); }, currentTime);
+                        (timerId, multiplier, remainingTime) => { 
+                            this._timerCompletionHandler(timerId, multiplier, remainingTime); 
+                        }, currentTime);
                 }
             }
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll() {
+        for (let business of this._businessList) {
+            business.level = 0;
+            business.hasManager = false;
+            business.timerId = -1;
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+// TODO: change to 'upgrade controller' later?
+class ManagerController
+{
+    _managerList = [];
+    _unlockedFlags = [];
+
+    _moneyController = null;
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    constructor(moneyController, definitionList) {
+        this._managerList = definitionList;
+        for (let i = 0; i < this._managerList.length; i++) {
+            this._unlockedFlags.push(false);
+        }
+
+        this._moneyController = moneyController;
+    }
+
+    buyManager(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            // TODO: check cost?
+
+            this._unlockedFlags[managerIdx] = true;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    isUnlocked(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            return this._unlockedFlags[managerIdx];
+        }
+
+        return false;
+    }
+
+    canAfford(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            return this._moneyController.canAffort(this._managerList[managerIdx].price);
+        }
+
+        return false;
+    }
+
+    _findManagerIndex(targetBusinessDef) {
+        for (let i = 0; i < this._managerList.length; i++) {
+            if (this._managerList[i].targetBusinessDef === targetBusinessDef) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    writeLocal(localStorage) {
+        localStorage.setItem("managerData", JSON.stringify(this._unlockedFlags));
+    }
+
+    readLocal(localStorage) {
+        let loadedFlags = JSON.parse(localStorage.getItem("managerData"));
+        if (loadedFlags) {
+            let indexCap = Math.min(this._unlockedFlags.length, loadedFlags.length);
+            for (let i = 0; i < indexCap; i++) {
+                this._unlockedFlags[i] = loadedFlags[i];
+            }
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll() {
+        for (let i = 0; i < this._unlockedFlags.length; i++) {
+            this._unlockedFlags[i] = false;
         }
     }
 }
@@ -172,7 +280,9 @@ class TimerController
                 // use splice() to remove an element
                 this._timerList.splice(ptr, 1);
 
-                timer.completionHandler(timer.id);
+                let repeatCount = Math.floor(timer.time / timer.duration);
+                let remainingTime = timer.time - repeatCount * timer.duration;
+                timer.completionHandler(timer.id, repeatCount, remainingTime);
             }
         }
     }
@@ -196,6 +306,14 @@ class TimerController
                 break;
             }
         }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll()
+    {
+        this._timerId = 0;
+        this._timerList = [];
     }
 }
 
@@ -241,5 +359,12 @@ class MoneyController
 
     readLocal(localStorage) {
         this._amount = parseInt(localStorage.getItem("moneyAmount"));
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll()
+    {
+        this._amount = 0;
     }
 }

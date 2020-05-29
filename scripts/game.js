@@ -1,7 +1,9 @@
 
 const timerController = new TimerController();
 const moneyController = new MoneyController();
-const businessController = new BusinessController(timerController, moneyController);
+const managerController = new ManagerController(moneyController, ManagerDefinitions);
+const businessController = new BusinessController(
+        timerController, moneyController, BusinessDefinitions);
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -23,7 +25,10 @@ function saveToLocal()
     localStorage.setItem("DuPlicationCapitalistSaveVersion", "1");
 
     moneyController.writeLocal(localStorage);
+    managerController.writeLocal(localStorage);
     businessController.writeLocal(localStorage);
+
+    localStorage.setItem("DuPlicationCapitalistTimestamp", (new Date()).getTime().toString());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -34,13 +39,27 @@ function initialize()
     let hasSave = localStorage.getItem("DuPlicationCapitalistSaveVersion") === "1";
     if (hasSave) {
         moneyController.readLocal(localStorage);
+        managerController.readLocal(localStorage);
         businessController.readLocal(localStorage);
+
+        let timeString = localStorage.getItem("DuPlicationCapitalistTimestamp");
+        if (timeString) {
+            lastTimestamp = parseInt(timeString);
+            let timeDiff = ((new Date()).getTime() - lastTimestamp) / 1000;
+
+            processOfflineChanges(timeDiff);
+        }
     } else {
         saveToLocal();
     }
 
     window.addEventListener("load", () => { launch(); });
     window.addEventListener("beforeunload", () => { closing(); });
+}
+
+function processOfflineChanges(timeDiff)
+{
+    timerController.updateTimers(timeDiff);
 }
 
 document.addEventListener("DOMContentLoaded", initialize);
@@ -54,8 +73,19 @@ function launch()
 
 function closing()
 {
-    console.log("dsfds");
-    console.log(timerController);
     saveToLocal();
     return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+function resetAll()
+{
+    let localStorage = window.localStorage;
+    localStorage.clear();
+
+    timerController.resetAll();
+    moneyController.resetAll();
+    managerController.resetAll();
+    businessController.resetAll();
 }
