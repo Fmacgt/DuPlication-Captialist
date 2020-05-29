@@ -127,6 +127,10 @@ const TimerRectOffsetY = 40;
 const TimerRectWidth = 80;
 const TimerRectHeight= 40;
 
+const ManagerRectGapX = 10;
+const ManagerRectWidth = 200;
+const ManagerRectHeight = 80;
+
 //==============================================================================
 
 const BackgroundColor = "#736961";
@@ -143,10 +147,12 @@ const TextColorWhite = "#F9F8F7";
 
 class BusinessUIItem
 {
-    constructor(x, y, business, startProcess, tryUpgrade) {
+    constructor(x, y, business, manager, startProcess, tryUpgrade, tryUnlockManager) {
         this.business = business;
+        this.manager = manager;
         this.startProcess = startProcess;
         this.tryUpgrade = tryUpgrade;
+        this.tryUnlockManager = tryUnlockManager;
 
         this.x = x;
         this.y = y;
@@ -162,6 +168,10 @@ class BusinessUIItem
         this.timerRect = new Rect(x + TimerRectOffsetX, y + TimerRectOffsetY,
                 TimerRectWidth, TimerRectHeight,
                 BorderColor, TimerRectColor);
+
+        this.managerRect = new Rect(x + BusinessUIItemWidth + ManagerRectGapX, y,
+                ManagerRectWidth, ManagerRectHeight, 
+                BorderColor, BackgroundColor);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -180,6 +190,15 @@ class BusinessUIItem
         this.revenueRect.render(ctx);
         this.upgradeRect.render(ctx);
         this.timerRect.render(ctx);
+
+        if (this.manager) {
+            if (this.business.hasManager) {
+                this._renderUnlockedManager(ctx);
+            } else {
+                this._renderLockedManager(ctx);
+            }
+        }
+
 
         // draw texts & images
 
@@ -220,6 +239,32 @@ class BusinessUIItem
                 this.frame.x + BusinessUIItemWidth / 2, this.frame.y + BusinessUIItemHeight / 2 + 28);
     }
 
+    _renderUnlockedManager(ctx) {
+        this.managerRect.render(ctx);
+
+        ctx.font = "24px Arial";
+        ctx.fillStyle = TextColorBlack;
+        ctx.textAlign = "center";
+        ctx.fillText(this.manager.name,
+                this.managerRect.x + ManagerRectWidth / 2, 
+                this.managerRect.y + ManagerRectHeight / 2 + 12);
+    }
+
+    _renderLockedManager(ctx) {
+        this.managerRect.render(ctx, ItemColorRed);
+
+        ctx.font = "20px Arial";
+        ctx.fillStyle = TextColorBlack;
+        ctx.textAlign = "center";
+        ctx.fillText(this.manager.name,
+                this.managerRect.x + ManagerRectWidth / 2, this.managerRect.y + 28);
+
+        ctx.fillStyle = TextColorWhite;
+        ctx.fillText(TextFormatter.formatWholeMoneyString(this.manager.price),
+                this.managerRect.x + ManagerRectWidth / 2, 
+                this.managerRect.y + ManagerRectHeight / 2 + 28);
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////
 
     checkClicking(x, y) {
@@ -234,6 +279,12 @@ class BusinessUIItem
                 if (this.startProcess) {
                     this.startProcess();
                 }
+            }
+        } else if (!this.business.hasManager &&
+                this.managerRect.containsPoint(x, y)) {
+            console.log(this.tryUnlockManager);
+            if (this.tryUnlockManager) {
+                this.tryUnlockManager();
             }
         }
     }
