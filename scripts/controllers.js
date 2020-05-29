@@ -7,26 +7,34 @@ class BusinessController
 
     _timerController = null;
     _moneyController = null;
+    _managerController = null;
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    constructor(timerController, moneyController, definitionList) {
+    constructor(timerController, moneyController, managerController, definitionList) {
         for (let business of definitionList) {
             this._businessList.push(new RuntimeBusiness(business, 0));
         }
 
         this._timerController = timerController;
         this._moneyController = moneyController;
+
+        this._managerController = managerController;
+        this._managerController.unlockedCallback = (manager) => {
+            this._managerUnlockedCallback(manager);
+        };
     }
 
     //==============================================================================
 
     buyBusiness(index) {
         let business = this._businessList[index];
-        business.level++;
-        this._recalculateBusinessStats(business);
+        if (this._moneyController.canAffort(business.price)) {
+            this._moneyController.consume(business.price);
 
-        // TODO: update UI as well
+            business.level++;
+            this._recalculateBusinessStats(business);
+        }
     }
 
     _recalculateBusinessStats(business) {
@@ -77,14 +85,32 @@ class BusinessController
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    populateUIItemList(startX, startY) {
+    _managerUnlockedCallback(manager) {
+        for (let i = 0; i < this._businessList.length; i++) {
+            let business = this._businessList[i];
+            if (business.definition === manager.targetBusinessDef) {
+                business.hasManager = true;
+                if (business.timerId === -1) {
+                    this.startProcessing(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    populateUIItemList(startX, startY, managerController) {
         let itemList = [];
         let y = startY;
         for (let itemIdx = 0; itemIdx < this._businessList.length; itemIdx++) {
             let businessIndex = itemIdx;
-            itemList.push(new BusinessUIItem(startX, y, this._businessList[itemIdx],
+            let business = this._businessList[itemIdx];
+            let manager = this._managerController.findManager(business.definition);
+            itemList.push(new BusinessUIItem(startX, y, business, manager,
                         () => { this.startProcessing(businessIndex); },
-                        () => { this.buyBusiness(businessIndex); }));
+                        () => { this.buyBusiness(businessIndex); },
+                        () => { this._managerController.buyManager(business.definition); }));
 
             y += BusinessUIItemHeight + 10;
         }
@@ -177,6 +203,7 @@ class ManagerController
     _unlockedFlags = [];
 
     _moneyController = null;
+    _unlockedCallback = null;
 
     /////////////////////////////////////////////////////////////////////////////////////
 
@@ -192,14 +219,29 @@ class ManagerController
     buyManager(targetBusinessDef) {
         let managerIdx = this._findManagerIndex(targetBusinessDef);
         if (managerIdx >= 0 && managerIdx < this._managerList.length) {
-            // TODO: check cost?
+            let manager = this._managerList[managerIdx];
+            if (this._moneyController.canAfford(manager.price)) {
+                this._moneyController.consume(manager.price);
 
-            this._unlockedFlags[managerIdx] = true;
+                this._unlockedFlags[managerIdx] = true;
+                if (this.unlockedCallback) {
+                    this.unlockedCallback(manager);
+                }
 
-            return true;
+                return true;
+            }
         }
 
         return false;
+    }
+
+    findManager(targetBusinessDef) {
+        let managerIdx = this._findManagerIndex(targetBusinessDef);
+        if (managerIdx >= 0 && managerIdx < this._managerList.length) {
+            return this._managerList[managerIdx];
+        }
+
+        return null;
     }
 
     isUnlocked(targetBusinessDef) {

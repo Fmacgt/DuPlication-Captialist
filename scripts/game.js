@@ -8,7 +8,7 @@ const timerController = new TimerController();
 const moneyController = new MoneyController();
 const managerController = new ManagerController(moneyController, ManagerDefinitions);
 const businessController = new BusinessController(
-        timerController, moneyController, BusinessDefinitions);
+        timerController, moneyController, managerController, BusinessDefinitions);
 
 const BusinessUIItemList = businessController.populateUIItemList(60, 60);
 
