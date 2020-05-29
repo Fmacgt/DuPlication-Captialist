@@ -46,23 +46,29 @@ class BusinessController
         let business = this._businessList[index];
         if (business.timerId === -1) {
             business.timerId = this._timerController.startTimer(business.processingTime, 
-                    (timerId) => { this._timerCompletionHandler(timerId); });
+                    (timerId, multiplier, remainingTime) => { 
+                        this._timerCompletionHandler(timerId, multiplier, remainingTime); 
+                    });
 
             // TODO: update UI
         }
     }
 
-    _timerCompletionHandler(timerId) {
+    _timerCompletionHandler(timerId, multiplier, remainingTime) {
         for (let business of this._businessList) {
             if (business.timerId === timerId) {
                 business.timerId = -1;
 
-                this._moneyController.grant(business.revenue);
+                this._moneyController.grant(business.revenue * multiplier);
 
                 // TODO: update UI
 
-                business.timerId = this._timerController.startTimer(business.processingTime, 
-                        (timerId) => { this._timerCompletionHandler(timerId); });
+                if (business.hasManager) {
+                    business.timerId = this._timerController.startTimer(business.processingTime, 
+                            (timerId, multiplier, remainingTime) => { 
+                                this._timerCompletionHandler(timerId, multiplier, remainingTime); 
+                            }, remainingTime);
+                }
 
                 break;
             }
@@ -75,10 +81,12 @@ class BusinessController
         // data to store:
         // 1. level,
         // 2. timer time - (running, time) pair
+        // 3. hasManager
         let saveDataList = [];
         for (let business of this._businessList) {
             let saveData = {};
             saveData.level = business.level;
+            saveData.hasManager = business.hasManager;
             if (business.timerId != -1) {
                 let remainingTime = this._timerController.getRemainingTime(business.timerId);
                 // in case the business somehow gets an invalid timer id...
@@ -112,6 +120,7 @@ class BusinessController
                 let saveData = saveDataList[i];
 
                 business.level = saveData.level;
+                business.hasManager = saveData.hasManager;
                 this._recalculateBusinessStats(business);
 
 
@@ -123,9 +132,21 @@ class BusinessController
                 if (saveData.processing) {
                     let currentTime = business.processingTime - saveData.timer;
                     business.timerId = this._timerController.startTimer(business.processingTime,
-                        (timerId) => { this._timerCompletionHandler(timerId); }, currentTime);
+                        (timerId, multiplier, remainingTime) => { 
+                            this._timerCompletionHandler(timerId, multiplier, remainingTime); 
+                        }, currentTime);
                 }
             }
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll() {
+        for (let business of this._businessList) {
+            business.level = 0;
+            business.hasManager = false;
+            business.timerId = -1;
         }
     }
 }
@@ -207,6 +228,14 @@ class ManagerController
             }
         }
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll() {
+        for (let i = 0; i < this._unlockedFlags.length; i++) {
+            this._unlockedFlags[i] = false;
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -251,7 +280,9 @@ class TimerController
                 // use splice() to remove an element
                 this._timerList.splice(ptr, 1);
 
-                timer.completionHandler(timer.id);
+                let repeatCount = Math.floor(timer.time / timer.duration);
+                let remainingTime = timer.time - repeatCount * timer.duration;
+                timer.completionHandler(timer.id, repeatCount, remainingTime);
             }
         }
     }
@@ -275,6 +306,14 @@ class TimerController
                 break;
             }
         }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll()
+    {
+        this._timerId = 0;
+        this._timerList = [];
     }
 }
 
@@ -320,5 +359,12 @@ class MoneyController
 
     readLocal(localStorage) {
         this._amount = parseInt(localStorage.getItem("moneyAmount"));
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    resetAll()
+    {
+        this._amount = 0;
     }
 }

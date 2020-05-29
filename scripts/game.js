@@ -27,6 +27,8 @@ function saveToLocal()
     moneyController.writeLocal(localStorage);
     managerController.writeLocal(localStorage);
     businessController.writeLocal(localStorage);
+
+    localStorage.setItem("DuPlicationCapitalistTimestamp", (new Date()).getTime().toString());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -39,12 +41,25 @@ function initialize()
         moneyController.readLocal(localStorage);
         managerController.readLocal(localStorage);
         businessController.readLocal(localStorage);
+
+        let timeString = localStorage.getItem("DuPlicationCapitalistTimestamp");
+        if (timeString) {
+            lastTimestamp = parseInt(timeString);
+            let timeDiff = ((new Date()).getTime() - lastTimestamp) / 1000;
+
+            processOfflineChanges(timeDiff);
+        }
     } else {
         saveToLocal();
     }
 
     window.addEventListener("load", () => { launch(); });
     window.addEventListener("beforeunload", () => { closing(); });
+}
+
+function processOfflineChanges(timeDiff)
+{
+    timerController.updateTimers(timeDiff);
 }
 
 document.addEventListener("DOMContentLoaded", initialize);
@@ -58,8 +73,19 @@ function launch()
 
 function closing()
 {
-    console.log("dsfds");
-    console.log(timerController);
     saveToLocal();
     return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+function resetAll()
+{
+    let localStorage = window.localStorage;
+    localStorage.clear();
+
+    timerController.resetAll();
+    moneyController.resetAll();
+    managerController.resetAll();
+    businessController.resetAll();
 }

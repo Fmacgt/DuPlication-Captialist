@@ -34,6 +34,7 @@ class RuntimeBusiness
         this.processingTime = definition.processingTime;
 
         this.timerId = -1;
+        this.hasManager = false;
     }
 }
 
