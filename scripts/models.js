@@ -73,19 +73,32 @@ class Timer
 /////////////////////////////////////////////////////////////////////////////////////
 
 class Rect {
-    constructor(x, y, width, height, fillColor = "#0095DD") {
+    constructor(x, y, width, height, strokeColor, fillColor = "#0095DD") {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.fillColor = fillColor;
+
+        if (strokeColor) {
+            this.hasStroke = true;
+            this.strokeColor = strokeColor;
+        } else {
+            this.hasStroke = false;
+        }
     }
 
-    render(ctx) {
+    render(ctx, overrideFillColor) {
         ctx.beginPath();
         ctx.rect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = this.fillColor;
+        ctx.fillStyle = overrideFillColor ? overrideFillColor : this.fillColor;
         ctx.fill();
+
+        if (this.hasStroke) {
+            ctx.strokeStyle = this.strokeColor;
+            ctx.stroke();
+        }
+
         ctx.closePath();
     }
 
@@ -101,7 +114,7 @@ const BusinessUIItemWidth = 300;
 const BusinessUIItemHeight = 80;
 
 const RevenueRectOffsetX = 80;
-const RevenueRectWidth = 200;
+const RevenueRectWidth = 220;
 const RevenueRectHeight = 40;
 
 const UpgradeRectOffsetX = 80;
@@ -114,6 +127,20 @@ const TimerRectOffsetY = 40;
 const TimerRectWidth = 80;
 const TimerRectHeight= 40;
 
+//==============================================================================
+
+const BackgroundColor = "#736961";
+const BorderColor = "#3A3630";
+const TimerRectColor = "#887D73";
+const ItemColorRed = "#D98852";
+const ProgressBarColor = "#84AF4D";
+const BarBackgroundColor = "#3B3630";
+const IconBackgroundColor = "#8DB8CE";
+const TextColorBlack = "#0A0908";
+const TextColorWhite = "#F9F8F7";
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 class BusinessUIItem
 {
     constructor(x, y, business, startProcess, tryUpgrade) {
@@ -124,16 +151,30 @@ class BusinessUIItem
         this.x = x;
         this.y = y;
 
-        this.frame = new Rect(x, y, BusinessUIItemWidth, BusinessUIItemHeight);
+        this.frame = new Rect(x, y, BusinessUIItemWidth, BusinessUIItemHeight, 
+                BorderColor, BackgroundColor);
         this.revenueRect = new Rect(x + RevenueRectOffsetX, y, 
-                RevenueRectWidth, RevenueRectHeight);
+                RevenueRectWidth, RevenueRectHeight, 
+                BorderColor, BackgroundColor);
         this.upgradeRect = new Rect(x + UpgradeRectOffsetX, y + UpgradeRectOffsetY, 
-                UpgradeRectWidth, UpgradeRectHeight, "#dd9500");
+                UpgradeRectWidth, UpgradeRectHeight, 
+                BorderColor, ItemColorRed);
         this.timerRect = new Rect(x + TimerRectOffsetX, y + TimerRectOffsetY,
-                TimerRectWidth, TimerRectHeight, "#00dd95");
+                TimerRectWidth, TimerRectHeight,
+                BorderColor, TimerRectColor);
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////
+
     render(ctx, timerController) {
+        if (this.business.level > 0) {
+            this._renderUnlockedItem(ctx, timerController);
+        } else {
+            this._renderLockedItem(ctx);
+        }
+    }
+
+    _renderUnlockedItem(ctx, timerController) {
         // draw frames
         this.frame.render(ctx);
         this.revenueRect.render(ctx);
@@ -144,26 +185,48 @@ class BusinessUIItem
 
         // Revenue
         ctx.font = "16px Arial";
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = TextColorBlack;
         ctx.textAlign = "center";
-        ctx.fillText(this.business.revenue.toString(), 
+        ctx.fillText(TextFormatter.formatWholeMoneyString(this.business.revenue), 
                 this.revenueRect.x + RevenueRectWidth / 2, this.revenueRect.y + 24);
 
         // Processing time
         let remainingTime = timerController.getRemainingTime(this.business.timerId);
-        let timerString = remainingTime != -1 ? remainingTime.toString() : "00:00:00";
+        let timerString = remainingTime != -1 ? TextFormatter.formatTimeString(remainingTime) : "00:00:00";
         ctx.fillText(timerString, 
                 this.timerRect.x + TimerRectWidth / 2, this.timerRect.y + 24);
 
+        // Business Levels
+        ctx.fillText(this.business.level.toString(),
+                this.frame.x + UpgradeRectOffsetX / 2, this.upgradeRect.y + 24);
+
         // Upgrade button & Cost
-        ctx.fillText(this.business.price.toString(),
+        ctx.fillStyle = TextColorWhite;
+        ctx.fillText(TextFormatter.formatWholeMoneyString(this.business.price),
                 this.upgradeRect.x + UpgradeRectWidth / 2, this.upgradeRect.y + 24);
     }
+
+    _renderLockedItem(ctx) {
+        this.frame.render(ctx, ItemColorRed);
+
+        ctx.font = "20px Arial";
+        ctx.fillStyle = TextColorBlack;
+        ctx.textAlign = "center";
+        ctx.fillText(this.business.name,
+                this.frame.x + BusinessUIItemWidth / 2, this.frame.y + 28);
+
+        ctx.fillStyle = TextColorWhite;
+        ctx.fillText(TextFormatter.formatWholeMoneyString(this.business.price),
+                this.frame.x + BusinessUIItemWidth / 2, this.frame.y + BusinessUIItemHeight / 2 + 28);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
 
     checkClicking(x, y) {
         let inside = this.frame.containsPoint(x, y);
         if (inside) {
-            if (this.upgradeRect.containsPoint(x, y)) {
+            if (this.business.level == 0 ||
+                    this.upgradeRect.containsPoint(x, y)) {
                 if (this.tryUpgrade) {
                     this.tryUpgrade();
                 }
