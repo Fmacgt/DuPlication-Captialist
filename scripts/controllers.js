@@ -13,7 +13,7 @@ class BusinessController
 
     constructor(timerController, moneyController, managerController, definitionList) {
         for (let business of definitionList) {
-            this._businessList.push(new RuntimeBusiness(business, 0));
+            this._businessList.push(new RuntimeBusiness(business, business.defaultLevel));
         }
 
         this._timerController = timerController;
@@ -187,7 +187,7 @@ class BusinessController
 
     resetAll() {
         for (let business of this._businessList) {
-            business.level = 0;
+            business.level = business.definition.defaultLevel;
             business.hasManager = false;
             business.timerId = -1;
         }
