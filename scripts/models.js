@@ -3,16 +3,17 @@
 
 class BusinessDefinition
 {
-    constructor(name, price, revenue, processingTime) {
+    constructor(name, price, revenue, processingTime, defaultLevel = 0) {
         this.name = name;
         this.price = price;
         this.revenue = revenue;
         this.processingTime = processingTime;
+        this.defaultLevel = defaultLevel;
     }
 }
 
 const BusinessDefinitions = [
-    new BusinessDefinition("Lemon Cart", 4, 1, 1),
+    new BusinessDefinition("Lemon Cart", 4, 1, 1, 1),
     new BusinessDefinition("Newspaper Stand", 400, 100, 2),
     new BusinessDefinition("Carwash Store", 20000, 5000, 6),
     new BusinessDefinition("Pizza Delivery", 120000, 30000, 15),
@@ -293,7 +294,6 @@ class BusinessUIItem
             }
         } else if (!this.business.hasManager &&
                 this.managerRect.containsPoint(x, y)) {
-            console.log(this.tryUnlockManager);
             if (this.tryUnlockManager) {
                 this.tryUnlockManager();
             }
